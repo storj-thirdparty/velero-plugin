@@ -44,7 +44,7 @@ func (o *ObjectStore) Init(config map[string]string) error {
 		return err
 	}
 
-	project, err := setupUplink(context.Background(), accessGrant)
+	project, err := setupUplink(context.Background(), config[accessGrant])
 	if err != nil {
 		return err
 	}
