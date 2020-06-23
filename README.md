@@ -21,7 +21,7 @@ Here we implement a Velero Object Store Plugin that is backed by Storj object st
 
 ```
 $ velero install --provider gcp \
-    --plugins jessgreb01/velero-plugin-for-storj:v0.0.2 \
+    --plugins storjthirdparty/velero-plugin:v0.1.0 \
     --bucket $BUCKET \
     --backup-location-config accessGrant=$ACCESS \
     --no-secret
@@ -44,7 +44,7 @@ $ velero restore create $RESTORE_NAME --from-backup $BACKUP_NAME
 ### steps to publish a new velero plugin for storj
 
 ```
-$ docker build -t jessgreb01/velero-plugin-for-storj:v0.0.2 .
+$ docker build -t storjthirdparty/velero-plugin:<version> .
 
-$ docker push jessgreb01/velero-plugin-for-storj:v0.0.2
+$ docker push storjthirdparty/velero-plugin:<version>
 ```
