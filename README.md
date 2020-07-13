@@ -48,3 +48,11 @@ $ docker build -t storjthirdparty/velero-plugin:<version> .
 
 $ docker push storjthirdparty/velero-plugin:<version>
 ```
+
+## Setting up a test environment with minikube
+
+### Deploy a docker registry
+
+### Build and push the image to the registry
+
+### Use the plugin from the cluster registry

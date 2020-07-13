@@ -10,9 +10,14 @@ func main() {
 	veleroplugin.NewServer().
 		BindFlags(pflag.CommandLine).
 		RegisterObjectStore("velero.io/gcp", newStorjObjectStore).
+		RegisterVolumeSnapshotter("storj/volume-snapshotter", newNoOpVolumeSnapshotterPlugin).
 		Serve()
 }
 
 func newStorjObjectStore(logger logrus.FieldLogger) (interface{}, error) {
 	return newObjectStore(logger), nil
+}
+
+func newNoOpVolumeSnapshotterPlugin(logger logrus.FieldLogger) (interface{}, error) {
+	return NewNoOpVolumeSnapshotter(logger), nil
 }
