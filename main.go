@@ -9,8 +9,8 @@ import (
 func main() {
 	veleroplugin.NewServer().
 		BindFlags(pflag.CommandLine).
-		RegisterObjectStore("velero.io/gcp", newStorjObjectStore).
-		RegisterVolumeSnapshotter("tardigrade.io/volume-snapshotter", newNoOpVolumeSnapshotterPlugin).
+		RegisterObjectStore("velero.io/tardigrade", newStorjObjectStore).
+		RegisterVolumeSnapshotter("velero.io/tardigrade", newNoOpVolumeSnapshotterPlugin).
 		Serve()
 }
 

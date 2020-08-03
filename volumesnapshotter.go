@@ -23,16 +23,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	veleroplugin "github.com/vmware-tanzu/velero/pkg/plugin/framework"
 	"github.com/vmware-tanzu/velero/pkg/plugin/velero"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"storj.io/uplink"
-)
-
-const (
-	accessGrant = "accessGrant"
 )
 
 // Volume keeps track of volumes created by this plugin
@@ -78,16 +73,15 @@ func (p *NoOpVolumeSnapshotter) Init(config map[string]string) error {
 		p.snapshots = make(map[string]Snapshot)
 	}
 
-	if err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant); err != nil {
-		return err
-	}
+	if p.project == nil {
+		var err error
+		p.project, err = setupUplink(context.Background(), config[accessGrant])
 
-	project, err := setupUplink(context.Background(), config[accessGrant])
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
 	}
-	// defer project.Close()
-	p.project = project
 
 	return nil
 }
@@ -96,7 +90,7 @@ func (p *NoOpVolumeSnapshotter) Init(config map[string]string) error {
 // availability zone, initialized from the provided snapshot,
 // and with the specified type and IOPS (if using provisioned IOPS).
 func (p *NoOpVolumeSnapshotter) CreateVolumeFromSnapshot(snapshotID, volumeType, volumeAZ string, iops *int64) (string, error) {
-	p.Infof("CreateVolumeFromSnapshot called %s %s %s %s", snapshotID, volumeType, volumeAZ, *iops)
+	p.Infof("CreateVolumeFromSnapshot called", snapshotID, volumeType, volumeAZ, *iops)
 	var volumeID string
 	for {
 		volumeID := snapshotID + ".vol." + strconv.FormatUint(rand.Uint64(), 10)
@@ -118,7 +112,7 @@ func (p *NoOpVolumeSnapshotter) CreateVolumeFromSnapshot(snapshotID, volumeType,
 // GetVolumeInfo returns the type and IOPS (if using provisioned IOPS) for
 // the specified volume in the given availability zone.
 func (p *NoOpVolumeSnapshotter) GetVolumeInfo(volumeID, volumeAZ string) (string, *int64, error) {
-	p.Infof("GetVolumeInfo called %s %s", volumeID, volumeAZ)
+	p.Infof("GetVolumeInfo called", volumeID, volumeAZ)
 	if val, ok := p.volumes[volumeID]; ok {
 		iops := val.iops
 		return val.volType, &iops, nil
@@ -128,17 +122,31 @@ func (p *NoOpVolumeSnapshotter) GetVolumeInfo(volumeID, volumeAZ string) (string
 
 // IsVolumeReady Check if the volume is ready.
 func (p *NoOpVolumeSnapshotter) IsVolumeReady(volumeID, volumeAZ string) (ready bool, err error) {
-	p.Infof("IsVolumeReady called %s %s", volumeID, volumeAZ)
+	p.Infof("IsVolumeReady called", volumeID, volumeAZ)
 	return true, nil
 }
 
 // CreateSnapshot creates a snapshot of the specified volume, and applies any provided
 // set of tags to the snapshot.
 func (p *NoOpVolumeSnapshotter) CreateSnapshot(volumeID, volumeAZ string, tags map[string]string) (string, error) {
-	p.Infof("CreateSnapshot called %s %s %s", volumeID, volumeAZ, tags)
+	p.Infof("CreateSnapshot called", volumeID, volumeAZ, tags)
 	var snapshotID string
+	var snapshotName string
 	for {
-		snapshotID = volumeID + ".snap." + strconv.FormatUint(rand.Uint64(), 10)
+		snapshotName = "snap." + strconv.FormatUint(rand.Uint64(), 10)
+		snapshotID = volumeID + "." + snapshotName
+		upload, err := p.project.UploadObject(context.Background(), "velero2", snapshotName, nil)
+		if err != nil {
+			return snapshotID, err
+		}
+		_, err = upload.Write([]byte("Hello Velero"))
+		if err != nil {
+			return snapshotID, err
+		}
+		err = upload.Commit()
+		if err != nil {
+			return snapshotID, err
+		}
 		p.Infof("CreateSnapshot trying to create snapshot", snapshotID)
 		if _, ok := p.snapshots[snapshotID]; ok {
 			// Duplicate ? Retry
@@ -168,14 +176,14 @@ func (p *NoOpVolumeSnapshotter) CreateSnapshot(volumeID, volumeAZ string, tags m
 
 // DeleteSnapshot deletes the specified volume snapshot.
 func (p *NoOpVolumeSnapshotter) DeleteSnapshot(snapshotID string) error {
-	p.Infof("DeleteSnapshot called %s", snapshotID)
+	p.Infof("DeleteSnapshot called", snapshotID)
 	delete(p.snapshots, snapshotID)
 	return nil
 }
 
 // GetVolumeID returns the specific identifier for the PersistentVolume.
 func (p *NoOpVolumeSnapshotter) GetVolumeID(unstructuredPV runtime.Unstructured) (string, error) {
-	p.Infof("GetVolumeID called %s", unstructuredPV)
+	p.Infof("GetVolumeID called", unstructuredPV)
 
 	pv := new(v1.PersistentVolume)
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPV.UnstructuredContent(), pv); err != nil {
@@ -189,14 +197,22 @@ func (p *NoOpVolumeSnapshotter) GetVolumeID(unstructuredPV runtime.Unstructured)
 	if pv.Spec.HostPath.Path == "" {
 		return "", errors.New("spec.hostPath.path not found")
 	}
+	volumeID := pv.Spec.HostPath.Path
 
+	if _, exists := p.volumes[volumeID]; !exists {
+		p.volumes[volumeID] = Volume{
+			volType: "orignalVolumeType",
+			az:      "volumeAZ",
+			iops:    100,
+		}
+	}
 	return pv.Spec.HostPath.Path, nil
 }
 
 // SetVolumeID sets the specific identifier for the PersistentVolume.
 func (p *NoOpVolumeSnapshotter) SetVolumeID(unstructuredPV runtime.Unstructured, volumeID string) (runtime.Unstructured, error) {
-	//p.Infof("SetVolumeID called %s %s", unstructuredPV, volumeID)
-	p.Infof("SetVolumeID called %s %s", unstructuredPV, volumeID)
+	p.Infof("SetVolumeID called", unstructuredPV, volumeID)
+
 	pv := new(v1.PersistentVolume)
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredPV.UnstructuredContent(), pv); err != nil {
 		return nil, errors.WithStack(err)
