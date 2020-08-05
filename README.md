@@ -20,10 +20,11 @@ Here we implement a Velero Object Store Plugin that is backed by Storj object st
 #### install velero with storj plugin
 
 ```
-$ velero install --provider gcp \
+$ velero install --provider tardigrade \
     --plugins storjthirdparty/velero-plugin:v0.1.0 \
     --bucket $BUCKET \
     --backup-location-config accessGrant=$ACCESS \
+    --snapshot-location-config accessGrant=$ACCESS \
     --no-secret
 ```
 
@@ -35,7 +36,10 @@ Perform a backup:
 $ velero backup create $BACKUP_NAME
 ```
 
-Perform a restore:
+Perform a backup with volume snapshots (not fully implemented yet):
+```
+$ velero backup create $BACKUP_NAME --snapshot-volumes
+Perform a restore (snapshot restore not implemented yet):
 
 ```
 $ velero restore create $RESTORE_NAME --from-backup $BACKUP_NAME
