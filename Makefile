@@ -9,11 +9,6 @@ VELERO_BACKUP_LOCATION := default
 
 export KUBECONFIG
 
-# check minimun required tools
-$(if $(shell which kind),,$(error kind tool is required))
-$(if $(shell which velero),,$(error velero tool is required))
-$(if $(shell which kubectl),,$(error kubectl tool is required))
-
 define HELP_MSG
 Run a reproducible local development environment to develop the Storj Velero \
 plugin. Usage: make [target]
@@ -66,7 +61,7 @@ endif
 
 .PHONY: plugin-build
 plugin-build: ## build docker image of this Velero plugin for development
-	@docker image build --squash --rm -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	@docker image build --rm -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 
 .PHONY: plugin-image-push
 plugin-image-push: ## push the plugin image to the local  K8s cluster
