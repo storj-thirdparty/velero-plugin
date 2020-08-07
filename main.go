@@ -9,7 +9,7 @@ import (
 func main() {
 	veleroplugin.NewServer().
 		BindFlags(pflag.CommandLine).
-		RegisterObjectStore("velero.io/gcp", newStorjObjectStore).
+		RegisterObjectStore("velero.io/tardigrade", newStorjObjectStore).
 		Serve()
 }
 
