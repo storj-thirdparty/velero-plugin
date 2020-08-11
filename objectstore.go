@@ -18,24 +18,11 @@ const (
 
 type ObjectStore struct {
 	log     logrus.FieldLogger
-	project *uplink.Project
+	access  *uplink.Access
 }
 
 func newObjectStore(logger logrus.FieldLogger) *ObjectStore {
 	return &ObjectStore{log: logger}
-}
-
-func setupUplink(ctx context.Context, storjAccessGrant string) (*uplink.Project, error) {
-	access, err := uplink.ParseAccess(storjAccessGrant)
-	if err != nil {
-		return nil, err
-	}
-	project, err := uplink.OpenProject(ctx, access)
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
 }
 
 func (o *ObjectStore) Init(config map[string]string) error {
@@ -43,19 +30,22 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	if err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant); err != nil {
 		return err
 	}
-
-	project, err := setupUplink(context.Background(), config[accessGrant])
+	access, err := uplink.ParseAccess(config[accessGrant])
 	if err != nil {
 		return err
 	}
-	// defer project.Close()
-	o.project = project
+	o.access = access
 	return nil
 }
 
 func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 	o.log.Infof("objectStore.PutObject called")
-	upload, err := o.project.UploadObject(context.Background(), bucket, key, nil)
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+               return err
+	}
+	defer project.Close()
+	upload, err := project.UploadObject(context.Background(), bucket, key, nil)
 	if err != nil {
 		return err
 	}
@@ -67,7 +57,13 @@ func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 
 func (o *ObjectStore) ObjectExists(bucket, key string) (bool, error) {
 	o.log.Infof("objectStore.ObjectExists called")
-	if _, err := o.project.StatObject(context.Background(), bucket, key); err != nil {
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return false, err
+	}
+	defer project.Close()
+
+	if _, err := project.StatObject(context.Background(), bucket, key); err != nil {
 		if errors.Is(err, uplink.ErrObjectNotFound) {
 			return false, nil
 		}
@@ -78,7 +74,12 @@ func (o *ObjectStore) ObjectExists(bucket, key string) (bool, error) {
 
 func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
 	o.log.Infof("objectStore.GetObject called")
-	downloader, err := o.project.DownloadObject(context.Background(), bucket, key, nil)
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return nil, err
+	}
+	defer project.Close()
+	downloader, err := project.DownloadObject(context.Background(), bucket, key, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -88,7 +89,13 @@ func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
 
 func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]string, error) {
 	o.log.Infof("objectStore.ListCommonPrefixes called")
-	objectsIter := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return nil, err
+	}
+	defer project.Close()
+
+	objectsIter := project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
 	var res []string
 	for objectsIter.Next() {
 		object := objectsIter.Item()
@@ -104,7 +111,13 @@ func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]st
 
 func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 	o.log.Infof("objectStore.ListObjects called")
-	object := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return nil, err
+	}
+	defer project.Close()
+
+	object := project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
 	var res []string
 	for object.Next() {
 		res = append(res, object.Item().Key)
@@ -117,7 +130,13 @@ func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 
 func (o *ObjectStore) DeleteObject(bucket, key string) error {
 	o.log.Infof("objectStore.DeleteObject called")
-	if _, err := o.project.DeleteObject(context.Background(), bucket, key); err != nil {
+	project, err := uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return err
+	}
+	defer project.Close()
+
+	if _, err := project.DeleteObject(context.Background(), bucket, key); err != nil {
 		return err
 	}
 	return nil
