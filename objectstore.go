@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,12 +15,13 @@ import (
 )
 
 const (
-	accessGrant = "accessGrant"
+	accessGrant        = "accessGrant"
+	linksharingBaseURL = "https://link.tardigradeshare.io"
 )
 
 type ObjectStore struct {
-	log     logrus.FieldLogger
-	access  *uplink.Access
+	log    logrus.FieldLogger
+	access *uplink.Access
 }
 
 func newObjectStore(logger logrus.FieldLogger) *ObjectStore {
@@ -42,7 +45,7 @@ func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 	o.log.Infof("objectStore.PutObject called")
 	project, err := uplink.OpenProject(context.Background(), o.access)
 	if err != nil {
-               return err
+		return err
 	}
 	defer project.Close()
 	upload, err := project.UploadObject(context.Background(), bucket, key, nil)
@@ -144,5 +147,31 @@ func (o *ObjectStore) DeleteObject(bucket, key string) error {
 
 func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (string, error) {
 	o.log.Infof("objectStore.CreateSignedURL called")
-	return "", errors.New("CreateSignedURL is not supported for this plugin")
+	var sharePrefixes []uplink.SharePrefix
+	sharePrefixes = append(sharePrefixes, uplink.SharePrefix{
+		Bucket: bucket,
+		Prefix: key,
+	})
+
+	permission := uplink.Permission{}
+	permission.AllowDownload = true
+	permission.AllowDelete = false
+	permission.AllowUpload = false
+	permission.AllowList = true // ?
+	permission.NotAfter = time.Now().Add(ttl)
+
+	newAccess, err := o.access.Share(permission, sharePrefixes...)
+	if err != nil {
+		return "", err
+	}
+
+	newAccessData, err := newAccess.Serialize()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s/%s/%s", linksharingBaseURL,
+		url.PathEscape(newAccessData),
+		url.PathEscape(bucket),
+		url.PathEscape(key)), nil
 }
