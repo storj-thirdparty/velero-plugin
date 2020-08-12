@@ -17,8 +17,8 @@ const (
 )
 
 type ObjectStore struct {
-	log     logrus.FieldLogger
-	access  *uplink.Access
+	log    logrus.FieldLogger
+	access *uplink.Access
 }
 
 func newObjectStore(logger logrus.FieldLogger) *ObjectStore {
@@ -42,7 +42,7 @@ func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 	o.log.Infof("objectStore.PutObject called")
 	project, err := uplink.OpenProject(context.Background(), o.access)
 	if err != nil {
-               return err
+		return err
 	}
 	defer project.Close()
 	upload, err := project.UploadObject(context.Background(), bucket, key, nil)
