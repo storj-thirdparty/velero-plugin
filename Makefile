@@ -61,11 +61,7 @@ endif
 
 .PHONY: plugin-build
 plugin-build: ## build docker image of this Velero plugin for development
-<<<<<<< HEAD
 	@docker image build --rm -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-=======
-	@docker image build --squash --rm -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
->>>>>>> 8e8fa25... Makefile: Create a local K8s cluster & more
 
 .PHONY: plugin-image-push
 plugin-image-push: ## push the plugin image to the local  K8s cluster
