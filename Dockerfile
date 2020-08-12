@@ -1,11 +1,11 @@
 FROM golang:1.14-buster AS build
-WORKDIR /go/src/github.com/jessicagreben/velero-plugin-for-storj-tardigrade
+ENV GOPROXY=https://proxy.golang.org
+WORKDIR /storj
 COPY . .
-RUN CGO_ENABLED=0 go build -o /go/bin/velero-plugin-for-storj-tardigrade .
-
+RUN make go-build
 
 FROM ubuntu:bionic
 RUN mkdir /plugins
-COPY --from=build /go/bin/velero-plugin-for-storj-tardigrade /plugins/
+COPY --from=build /storj/velero-plugin-storj /plugins/
 USER nobody:nogroup
 ENTRYPOINT ["/bin/bash", "-c", "cp /plugins/* /target/."]
