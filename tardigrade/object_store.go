@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"storj.io/uplink"
-
 	veleroplugin "github.com/vmware-tanzu/velero/pkg/plugin/framework"
+
+	"storj.io/uplink"
 )
 
 const (
