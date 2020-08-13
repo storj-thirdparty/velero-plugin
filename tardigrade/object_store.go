@@ -1,4 +1,4 @@
-package main
+package tardigrade
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type ObjectStore struct {
 	project *uplink.Project
 }
 
-func newObjectStore(logger logrus.FieldLogger) *ObjectStore {
+func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 	return &ObjectStore{log: logger}
 }
 
