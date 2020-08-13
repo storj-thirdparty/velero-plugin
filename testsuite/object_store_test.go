@@ -18,7 +18,7 @@ import (
 	"storj.io/velero-plugin/tardigrade"
 )
 
-func TestUploadDownload(t *testing.T) {
+func TestPutObject(t *testing.T) {
 	testplanet.Run(t, testplanet.Config{
 		SatelliteCount: 1, StorageNodeCount: 0, UplinkCount: 1,
 	}, func(t *testing.T, ctx *testcontext.Context, planet *testplanet.Planet) {
