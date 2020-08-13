@@ -23,7 +23,7 @@ Here we implement a Velero Object Store Plugin that is backed by Storj object st
 ### Install velero with Storj plugin
 
 ```
-$ velero install --provider gcp \
+$ velero install --provider tardigrade \
     --plugins storjthirdparty/velero-plugin:v0.1.0 \
     --bucket $BUCKET \
     --backup-location-config accessGrant=$ACCESS \
