@@ -46,7 +46,7 @@ velero-backup-location-create: .is-access-set ## create a backup location using 
 	@velero backup-location create $(VELERO_BACKUP_LOCATION) \
 		--bucket=$(BUCKET_NAME) \
 		--config accessGrant=$(STORJ_ACCESS) \
-		--provider=gcp
+		--provider=tardigrade
 
 .PHONY: velero-backup-location-delete
 velero-backup-location-delete: ## delete the backup location that uses Storj plugin
