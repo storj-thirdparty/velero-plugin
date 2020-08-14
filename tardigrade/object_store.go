@@ -1,4 +1,4 @@
-package main
+package tardigrade
 
 import (
 	"context"
@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"storj.io/uplink"
-
 	veleroplugin "github.com/vmware-tanzu/velero/pkg/plugin/framework"
+
+	"storj.io/uplink"
 )
 
 const (
@@ -21,7 +21,7 @@ type ObjectStore struct {
 	project *uplink.Project
 }
 
-func newObjectStore(logger logrus.FieldLogger) *ObjectStore {
+func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 	return &ObjectStore{log: logger}
 }
 
