@@ -14,15 +14,19 @@ import (
 	"storj.io/uplink"
 )
 
+// config params
 const (
 	accessGrant        = "accessGrant"
-	linksharingBaseURL = "https://link.tardigradeshare.io"
+	linksharingBaseURL = "linksharingBaseURL"
 )
 
+const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
+
 type ObjectStore struct {
-	log     logrus.FieldLogger
-	access  *uplink.Access
-	project *uplink.Project
+	log                logrus.FieldLogger
+	access             *uplink.Access
+	project            *uplink.Project
+	linksharingBaseURL string
 }
 
 func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
@@ -31,7 +35,7 @@ func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Infof("objectStore.Init called")
-	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
+	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant, linksharingBaseURL)
 	if err != nil {
 		return err
 	}
@@ -44,6 +48,11 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	o.project, err = uplink.OpenProject(context.Background(), o.access)
 	if err != nil {
 		return err
+	}
+
+	o.linksharingBaseURL = config[linksharingBaseURL]
+	if o.linksharingBaseURL == "" {
+		o.linksharingBaseURL = defaultLinksharingBaseURL
 	}
 
 	return nil
@@ -121,27 +130,25 @@ func (o *ObjectStore) DeleteObject(bucket, key string) error {
 
 func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (string, error) {
 	o.log.Infof("objectStore.CreateSignedURL called")
-	var sharePrefixes []uplink.SharePrefix
-	sharePrefixes = append(sharePrefixes, uplink.SharePrefix{
-		Bucket: bucket,
-		Prefix: key,
-	})
 
 	permission := uplink.ReadOnlyPermission()
 	permission.NotAfter = time.Now().Add(ttl)
 
-	newAccess, err := o.access.Share(permission, sharePrefixes...)
+	restrictedAccess, err := o.access.Share(permission, uplink.SharePrefix{
+		Bucket: bucket,
+		Prefix: key,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	newAccessData, err := newAccess.Serialize()
+	restrictedAccessGrant, err := restrictedAccess.Serialize()
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s/%s/%s/%s", linksharingBaseURL,
-		url.PathEscape(newAccessData),
+	return fmt.Sprintf("%s/%s/%s/%s", o.linksharingBaseURL,
+		url.PathEscape(restrictedAccessGrant),
 		url.PathEscape(bucket),
 		url.PathEscape(key)), nil
 }
