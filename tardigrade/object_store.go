@@ -16,8 +16,7 @@ import (
 
 // config params
 const (
-	accessGrant        = "accessGrant"
-	linksharingBaseURL = "linksharingBaseURL"
+	accessGrant = "accessGrant"
 )
 
 const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
@@ -26,16 +25,16 @@ type ObjectStore struct {
 	log                logrus.FieldLogger
 	access             *uplink.Access
 	project            *uplink.Project
-	linksharingBaseURL string
+	LinksharingBaseURL string
 }
 
 func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
-	return &ObjectStore{log: logger}
+	return &ObjectStore{log: logger, LinksharingBaseURL: defaultLinksharingBaseURL}
 }
 
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Infof("objectStore.Init called")
-	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant, linksharingBaseURL)
+	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 	if err != nil {
 		return err
 	}
@@ -48,11 +47,6 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	o.project, err = uplink.OpenProject(context.Background(), o.access)
 	if err != nil {
 		return err
-	}
-
-	o.linksharingBaseURL = config[linksharingBaseURL]
-	if o.linksharingBaseURL == "" {
-		o.linksharingBaseURL = defaultLinksharingBaseURL
 	}
 
 	return nil
@@ -147,7 +141,7 @@ func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (st
 		return "", err
 	}
 
-	return fmt.Sprintf("%s/%s/%s/%s", o.linksharingBaseURL,
+	return fmt.Sprintf("%s/%s/%s/%s", o.LinksharingBaseURL,
 		url.PathEscape(restrictedAccessGrant),
 		url.PathEscape(bucket),
 		url.PathEscape(key)), nil

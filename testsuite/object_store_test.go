@@ -80,11 +80,11 @@ func TestCreateSignedURL(t *testing.T) {
 		require.NoError(t, err)
 
 		config := map[string]string{
-			"accessGrant":        serializedAccess,
-			"linksharingBaseURL": "http://" + linksharingServer.Addr(),
+			"accessGrant": serializedAccess,
 		}
 
 		objectStore := tardigrade.NewObjectStore(logrus.New())
+		objectStore.LinksharingBaseURL = "http://" + linksharingServer.Addr()
 		err = objectStore.Init(config)
 		require.NoError(t, err)
 
