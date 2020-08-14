@@ -71,6 +71,11 @@ plugin-image-push: ## push the plugin image to the local  K8s cluster
 go-build: ## build the Go source
 	@CGO_ENABLED=0 go build -o velero-plugin-storj ./cmd
 
+.PHONY: test
+test: ## Run tests on source code
+	cd testsuite; go test -race -v -cover -coverprofile=.coverprofile ./...
+	@echo done
+
 .PHONY: dev-env-init
 dev-env-init: k8s-start velero-install ## start K8s cluster and install Velero
 

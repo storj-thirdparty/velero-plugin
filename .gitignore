@@ -1,2 +1,3 @@
 .k8s
 velero-plugin-storj
+/.coverprofile
