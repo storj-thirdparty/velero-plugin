@@ -96,6 +96,7 @@ func TestCreateSignedURL(t *testing.T) {
 		err = uplink.Upload(ctx, satellite, "bucket", "object", data)
 		require.NoError(t, err)
 
+		// Create signed URL with TTL of 1 minute
 		signedURL, err := objectStore.CreateSignedURL("bucket", "object", 1*time.Minute)
 		require.NoError(t, err)
 
@@ -106,7 +107,21 @@ func TestCreateSignedURL(t *testing.T) {
 		downloaded, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, data, downloaded)
+
+		// Create signed URL with TTL ending in the past - expect error on download
+		signedURL, err = objectStore.CreateSignedURL("bucket", "object", -1*time.Minute)
+		require.NoError(t, err)
+
+		resp, err = http.Get(signedURL)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		downloaded, err = ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, http.StatusOK, resp.StatusCode)
 	})
 }
 
