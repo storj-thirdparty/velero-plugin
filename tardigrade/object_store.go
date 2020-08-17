@@ -2,7 +2,9 @@ package tardigrade
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,44 +14,41 @@ import (
 	"storj.io/uplink"
 )
 
+// config params
 const (
 	accessGrant = "accessGrant"
 )
 
+const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
+
 type ObjectStore struct {
-	log     logrus.FieldLogger
-	project *uplink.Project
+	log                logrus.FieldLogger
+	access             *uplink.Access
+	project            *uplink.Project
+	LinksharingBaseURL string
 }
 
 func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
-	return &ObjectStore{log: logger}
-}
-
-func setupUplink(ctx context.Context, storjAccessGrant string) (*uplink.Project, error) {
-	access, err := uplink.ParseAccess(storjAccessGrant)
-	if err != nil {
-		return nil, err
-	}
-	project, err := uplink.OpenProject(ctx, access)
-	if err != nil {
-		return nil, err
-	}
-
-	return project, nil
+	return &ObjectStore{log: logger, LinksharingBaseURL: defaultLinksharingBaseURL}
 }
 
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Infof("objectStore.Init called")
-	if err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant); err != nil {
-		return err
-	}
-
-	project, err := setupUplink(context.Background(), config[accessGrant])
+	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 	if err != nil {
 		return err
 	}
-	// defer project.Close()
-	o.project = project
+
+	o.access, err = uplink.ParseAccess(config[accessGrant])
+	if err != nil {
+		return err
+	}
+
+	o.project, err = uplink.OpenProject(context.Background(), o.access)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -125,5 +124,25 @@ func (o *ObjectStore) DeleteObject(bucket, key string) error {
 
 func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (string, error) {
 	o.log.Infof("objectStore.CreateSignedURL called")
-	return "", errors.New("CreateSignedURL is not supported for this plugin")
+
+	permission := uplink.ReadOnlyPermission()
+	permission.NotAfter = time.Now().Add(ttl)
+
+	restrictedAccess, err := o.access.Share(permission, uplink.SharePrefix{
+		Bucket: bucket,
+		Prefix: key,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	restrictedAccessGrant, err := restrictedAccess.Serialize()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s/%s/%s", o.LinksharingBaseURL,
+		url.PathEscape(restrictedAccessGrant),
+		url.PathEscape(bucket),
+		url.PathEscape(key)), nil
 }
