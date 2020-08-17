@@ -80,7 +80,7 @@ For connecting to this cluster with kubectl or Velero CLI you need to export the
 ## steps to publish a new velero plugin for storj
 
 ```
-$ docker build -t storjthirdparty/velero-plugin:<version> .
+$ docker build -t storjlabs/velero-plugin:<version> .
 
-$ docker push storjthirdparty/velero-plugin:<version>
+$ docker push storjlabs/velero-plugin:<version>
 ```
