@@ -143,7 +143,7 @@ func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]st
 func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 	o.log.Debug("objectStore.ListObjects called")
 
-	object := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
+	object := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix, Recursive: true})
 	var res []string
 	for object.Next() {
 		res = append(res, object.Item().Key)
@@ -161,7 +161,14 @@ func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 func (o *ObjectStore) DeleteObject(bucket, key string) error {
 	o.log.Debug("objectStore.DeleteObject called")
 
-	if _, err := o.project.DeleteObject(context.Background(), bucket, key); err != nil {
+	_, err := o.project.DeleteObject(context.Background(), bucket, key)
+	if err != nil {
+		if errors.Is(err, uplink.ErrBucketNotFound) {
+			return nil
+		}
+		if errors.Is(err, uplink.ErrObjectNotFound) {
+			return nil
+		}
 		return err
 	}
 
