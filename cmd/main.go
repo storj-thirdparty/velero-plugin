@@ -1,3 +1,6 @@
+// Copyright (C) 2020 Storj Labs, Inc.
+// See LICENSE for copying information.
+
 package main
 
 import (
@@ -11,10 +14,10 @@ import (
 func main() {
 	veleroplugin.NewServer().
 		BindFlags(pflag.CommandLine).
-		RegisterObjectStore("velero.io/tardigrade", newStorjObjectStore).
+		RegisterObjectStore("velero.io/tardigrade", newObjectStore).
 		Serve()
 }
 
-func newStorjObjectStore(logger logrus.FieldLogger) (interface{}, error) {
+func newObjectStore(logger logrus.FieldLogger) (interface{}, error) {
 	return tardigrade.NewObjectStore(logger), nil
 }

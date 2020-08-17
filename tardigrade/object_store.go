@@ -1,3 +1,6 @@
+// Copyright (C) 2020 Storj Labs, Inc.
+// See LICENSE for copying information.
+
 package tardigrade
 
 import (
@@ -14,13 +17,15 @@ import (
 	"storj.io/uplink"
 )
 
-// config params
+// Config params.
 const (
 	accessGrant = "accessGrant"
 )
 
 const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
 
+// ObjectStore exposes basic object-storage operations required
+// by Velero.
 type ObjectStore struct {
 	log                logrus.FieldLogger
 	access             *uplink.Access
@@ -28,10 +33,17 @@ type ObjectStore struct {
 	LinksharingBaseURL string
 }
 
+// NewObjectStore creates new Tardigrade object store.
 func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 	return &ObjectStore{log: logger, LinksharingBaseURL: defaultLinksharingBaseURL}
 }
 
+// Init prepares the ObjectStore for usage using the provided map of
+// configuration key-value pairs. It returns an error if the ObjectStore
+// cannot be initialized from the provided config.
+//
+// Specific config for Tardigrade:
+//   - accessGrant (required): serialized access grant to Tardigrade project.
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Infof("objectStore.Init called")
 	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
@@ -52,6 +64,8 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	return nil
 }
 
+// PutObject creates a new object using the data in body within the specified
+// object storage bucket with the given key.
 func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 	o.log.Infof("objectStore.PutObject called")
 	upload, err := o.project.UploadObject(context.Background(), bucket, key, nil)
@@ -64,6 +78,7 @@ func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
 	return upload.Commit()
 }
 
+// ObjectExists checks if there is an object with the given key in the object storage bucket.
 func (o *ObjectStore) ObjectExists(bucket, key string) (bool, error) {
 	o.log.Infof("objectStore.ObjectExists called")
 	if _, err := o.project.StatObject(context.Background(), bucket, key); err != nil {
@@ -75,6 +90,8 @@ func (o *ObjectStore) ObjectExists(bucket, key string) (bool, error) {
 	return true, nil
 }
 
+// GetObject retrieves the object with the given key from the specified
+// bucket in object storage.
 func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
 	o.log.Infof("objectStore.GetObject called")
 	downloader, err := o.project.DownloadObject(context.Background(), bucket, key, nil)
@@ -85,6 +102,16 @@ func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
 	return downloader, nil
 }
 
+// ListCommonPrefixes gets a list of all object key prefixes that start with
+// the specified prefix and stop at the next instance of the provided delimiter.
+//
+// For example, if the bucket contains the following keys:
+//		a-prefix/foo-1/bar
+// 		a-prefix/foo-1/baz
+//		a-prefix/foo-2/baz
+// 		some-other-prefix/foo-3/bar
+// and the provided prefix arg is "a-prefix/", and the delimiter is "/",
+// this will return the slice {"a-prefix/foo-1/", "a-prefix/foo-2/"}.
 func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]string, error) {
 	o.log.Infof("objectStore.ListCommonPrefixes called")
 	objectsIter := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
@@ -101,6 +128,8 @@ func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]st
 	return res, nil
 }
 
+// ListObjects gets a list of all keys in the specified bucket
+// that have the given prefix.
 func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 	o.log.Infof("objectStore.ListObjects called")
 	object := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
@@ -114,6 +143,8 @@ func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
 	return res, nil
 }
 
+// DeleteObject removes the object with the specified key from the given
+// bucket.
 func (o *ObjectStore) DeleteObject(bucket, key string) error {
 	o.log.Infof("objectStore.DeleteObject called")
 	if _, err := o.project.DeleteObject(context.Background(), bucket, key); err != nil {
@@ -122,6 +153,7 @@ func (o *ObjectStore) DeleteObject(bucket, key string) error {
 	return nil
 }
 
+// CreateSignedURL creates a pre-signed URL for the given bucket and key that expires after ttl.
 func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (string, error) {
 	o.log.Infof("objectStore.CreateSignedURL called")
 
