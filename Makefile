@@ -1,17 +1,22 @@
 K8S_DIR := .k8s
-K8S_CLUSTER_NAME := storj
+K8S_CLUSTER_NAME := tardigrade
 KUBECONFIG = $(realpath $(K8S_DIR)/config)
 BUCKET_NAME ?= velero
 STORJ_ACCESS ?= # Required
-DOCKER_IMAGE := storjthirdparty/velero-plugin
-DOCKER_TAG ?= dev
 VELERO_BACKUP_LOCATION := default
 
 export KUBECONFIG
 
+DOCKER_IMAGE := storjlabs/velero-plugin
+BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
+DOCKER_TAG := ${BRANCH_NAME}
+ifneq (,$(shell git describe --tags --exact-match --match "v[0-9]*\.[0-9]*\.[0-9]*" --exclude "v[0-9]*\.[0-9]*\.[0-9]*[!0-9]*"))
+DOCKER_TAG_LATEST := true
+endif
+
 define HELP_MSG
-Run a reproducible local development environment to develop the Storj Velero \
-plugin. Usage: make [target]
+Run a reproducible local development environment to develop the Velero \
+plugin for Tardigrade. Usage: make [target]
 endef
 
 .PHONY: help
@@ -42,14 +47,14 @@ velero-plugin-remove: ## delete this plugin from Velero server
 	@velero plugin remove $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 .PHONY: velero-backup-location-create
-velero-backup-location-create: .is-access-set ## create a backup location using Storj plugin
+velero-backup-location-create: .is-access-set ## create a backup location using Tardigrade plugin
 	@velero backup-location create $(VELERO_BACKUP_LOCATION) \
 		--bucket=$(BUCKET_NAME) \
 		--config accessGrant=$(STORJ_ACCESS) \
 		--provider=tardigrade
 
 .PHONY: velero-backup-location-delete
-velero-backup-location-delete: ## delete the backup location that uses Storj plugin
+velero-backup-location-delete: ## delete the backup location that uses Tardigrade plugin
 		@kubectl -n velero delete backupstoragelocation.velero.io $(VELERO_BACKUP_LOCATION)
 
 .PHONY: velero-uninstall
@@ -69,12 +74,21 @@ plugin-image-push: ## push the plugin image to the local  K8s cluster
 
 .PHONY: go-build
 go-build: ## build the Go source
-	@CGO_ENABLED=0 go build -o velero-plugin-storj ./cmd
+	@CGO_ENABLED=0 go build -o velero-plugin-for-tardigrade ./cmd
 
 .PHONY: test
 test: ## Run tests on source code
 	cd testsuite; go test -race -v -cover -coverprofile=.coverprofile ./...
 	@echo done
+
+
+.PHONY: push
+push: plugin-build ## pushes the Docker image to Docker Hub
+	@docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
+ifeq ($(DOCKER_TAG_LATEST), true)
+	docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(DOCKER_IMAGE):latest
+	docker push $(DOCKER_IMAGE):latest
+endif
 
 .PHONY: dev-env-init
 dev-env-init: k8s-start velero-install ## start K8s cluster and install Velero
@@ -87,12 +101,12 @@ dev-env-refresh: velero-plugin-remove dev-env-start ## build the plugin again an
 
 .PHONY: dev-env-destroy
 dev-env-destroy: ## destroy the local development environment
-	@kind delete cluster --name $(K8S_CLUSTER_NAME) || true
-	@rm -rf $(K8S_DIR)
+	-@kind delete cluster --name $(K8S_CLUSTER_NAME)
+	-@rm -rf $(K8S_DIR)
 
 .PHONY: clean
 clean: dev-env-destroy ## clean up the local environment on your local machine
-	@docker image rm -f $(DOCKER_IMAGE):$(DOCKER_TAG) || true
+	-@docker image rm -f $(DOCKER_IMAGE):$(DOCKER_TAG)
 
 .PHONY: .is-access-set
 .is-access-set:
