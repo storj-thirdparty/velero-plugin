@@ -56,7 +56,7 @@ pipeline {
                             sh 'go vet ./...'
                             sh 'go test -parallel 4 -p 6 -vet=off $COVERFLAGS -timeout 20m -json -race ./... 2>&1 | tee ../.build/testsuite.json | xunit -out ../.build/testsuite.xml'
                         }
-                        // TODO enable this later 
+                        // TODO enable this later
                         // sh 'check-clean-directory'
                     }
 

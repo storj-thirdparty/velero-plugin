@@ -45,7 +45,8 @@ func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 // Specific config for Tardigrade:
 //   - accessGrant (required): serialized access grant to Tardigrade project.
 func (o *ObjectStore) Init(config map[string]string) error {
-	o.log.Infof("objectStore.Init called")
+	o.log.Debug("objectStore.Init called")
+
 	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 	if err != nil {
 		return err
@@ -67,33 +68,39 @@ func (o *ObjectStore) Init(config map[string]string) error {
 // PutObject creates a new object using the data in body within the specified
 // object storage bucket with the given key.
 func (o *ObjectStore) PutObject(bucket, key string, body io.Reader) error {
-	o.log.Infof("objectStore.PutObject called")
+	o.log.Debug("objectStore.PutObject called")
+
 	upload, err := o.project.UploadObject(context.Background(), bucket, key, nil)
 	if err != nil {
 		return err
 	}
+
 	if _, err := io.Copy(upload, body); err != nil {
 		return err
 	}
+
 	return upload.Commit()
 }
 
 // ObjectExists checks if there is an object with the given key in the object storage bucket.
 func (o *ObjectStore) ObjectExists(bucket, key string) (bool, error) {
-	o.log.Infof("objectStore.ObjectExists called")
+	o.log.Debug("objectStore.ObjectExists called")
+
 	if _, err := o.project.StatObject(context.Background(), bucket, key); err != nil {
 		if errors.Is(err, uplink.ErrObjectNotFound) {
 			return false, nil
 		}
 		return false, errors.WithStack(err)
 	}
+
 	return true, nil
 }
 
 // GetObject retrieves the object with the given key from the specified
 // bucket in object storage.
 func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
-	o.log.Infof("objectStore.GetObject called")
+	o.log.Debug("objectStore.GetObject called")
+
 	downloader, err := o.project.DownloadObject(context.Background(), bucket, key, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -113,7 +120,8 @@ func (o *ObjectStore) GetObject(bucket, key string) (io.ReadCloser, error) {
 // and the provided prefix arg is "a-prefix/", and the delimiter is "/",
 // this will return the slice {"a-prefix/foo-1/", "a-prefix/foo-2/"}.
 func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]string, error) {
-	o.log.Infof("objectStore.ListCommonPrefixes called")
+	o.log.Debug("objectStore.ListCommonPrefixes called")
+
 	objectsIter := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
 	var res []string
 	for objectsIter.Next() {
@@ -122,40 +130,47 @@ func (o *ObjectStore) ListCommonPrefixes(bucket, prefix, delimiter string) ([]st
 			res = append(res, object.Key)
 		}
 	}
+
 	if err := objectsIter.Err(); err != nil {
 		return res, err
 	}
+
 	return res, nil
 }
 
 // ListObjects gets a list of all keys in the specified bucket
 // that have the given prefix.
 func (o *ObjectStore) ListObjects(bucket, prefix string) ([]string, error) {
-	o.log.Infof("objectStore.ListObjects called")
+	o.log.Debug("objectStore.ListObjects called")
+
 	object := o.project.ListObjects(context.Background(), bucket, &uplink.ListObjectsOptions{Prefix: prefix})
 	var res []string
 	for object.Next() {
 		res = append(res, object.Item().Key)
 	}
+
 	if err := object.Err(); err != nil {
 		return res, err
 	}
+
 	return res, nil
 }
 
 // DeleteObject removes the object with the specified key from the given
 // bucket.
 func (o *ObjectStore) DeleteObject(bucket, key string) error {
-	o.log.Infof("objectStore.DeleteObject called")
+	o.log.Debug("objectStore.DeleteObject called")
+
 	if _, err := o.project.DeleteObject(context.Background(), bucket, key); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // CreateSignedURL creates a pre-signed URL for the given bucket and key that expires after ttl.
 func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (string, error) {
-	o.log.Infof("objectStore.CreateSignedURL called")
+	o.log.Debug("objectStore.CreateSignedURL called")
 
 	permission := uplink.ReadOnlyPermission()
 	permission.NotAfter = time.Now().Add(ttl)
