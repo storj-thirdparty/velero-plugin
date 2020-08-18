@@ -10,7 +10,9 @@ export KUBECONFIG
 DOCKER_IMAGE := storjlabs/velero-plugin
 BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
 DOCKER_TAG := ${BRANCH_NAME}
-ifneq (,$(shell git describe --tags --exact-match --match "v[0-9]*\.[0-9]*\.[0-9]*" --exclude "v[0-9]*\.[0-9]*\.[0-9]*[!0-9]*"))
+# TODO: add --exclude "v[0-9]*\.[0-9]*\.[0-9]*[!0-9]*" after releasing v1.0.0
+# to avoid updating :latest to Beta and RC releases.
+ifneq (,$(shell git describe --tags --exact-match --match "v[0-9]*\.[0-9]*\.[0-9]*"))
 DOCKER_TAG_LATEST := true
 endif
 
