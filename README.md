@@ -1,30 +1,30 @@
-# Velero plugin for Storj
+# Velero plugin for Tardigrade
 
 Velero is a tool to backup Kubernetes clusters. Velero does two things:
 
-1. performs backups of the workloads running in a kubernetes cluster and,
-1. takes snapshots of persistent volumes.
+1. Performs backups of the workloads running in a kubernetes cluster and,
+1. Takes snapshots of persistent volumes.
 
 Velero is able to integrate with a variety of storage systems plugins. There are two types of plugins available: object store or volume snapshotter (or both).
 
-Here we implement a Velero Object Store Plugin that is backed by Storj object storage.
+Here we implement a Velero Object Store plugin that is backed by Tardigrade object storage.
 
-## Install Velero with Storj object store plugin
+## Installation
 
 ### Prerequisites
 
-- Complete Velero Prerequisites and install the CLI: [docs](https://velero.io/docs/master/basic-install/)
-- Create a storj tardigrade account: [docs](https://tardigrade.io/signup/)
-- Created a project in the storj account: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-project)
-- Create an api key for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-an-api-key)
-- Setup a storj Uplink CLI and create an access grant for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/set-up-uplink-cli)
-- Create a storj bucket where Velero will store the backups: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-bucket)
+- Complete Velero prerequisites and install the CLI: [docs](https://velero.io/docs/master/basic-install/)
+- Create a Tardigrade account: [docs](https://tardigrade.io/signup/)
+- Create a project in the Tardigrade account: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-project)
+- Create an API key for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-an-api-key)
+- Setup the Uplink CLI and create an access grant for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/set-up-uplink-cli)
+- Create a Tardigrade bucket where Velero will store the backups: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-bucket)
 
-### Install velero with Storj plugin
+### Install the Velero plugin for Tardigrade
 
 ```
 $ velero install --provider tardigrade \
-    --plugins storjthirdparty/velero-plugin:v0.1.0 \
+    --plugins storjlabs/velero-plugin \
     --bucket $BUCKET \
     --backup-location-config accessGrant=$ACCESS \
     --no-secret
@@ -61,7 +61,7 @@ The local environment requires the following tools:
 
 Be aware that the `Makefile` uses some Unix like tools that you may need to install depending of your Linux distribution and OSX and you will have to install for sure in Windows. While this local environment has been working fine in some Linux distributions and probably works in almost all of them, we believe that also works in OSX but we don't know if it will in Windows.
 
-NOTE Kind has some [known issues](https://kind.sigs.k8s.io/docs/user/known-issues/) and some of them are related with the OS and architecture.
+NOTE: Kind has some [known issues](https://kind.sigs.k8s.io/docs/user/known-issues/) and some of them are related with the OS and architecture.
 
 
 ### Development
@@ -77,10 +77,6 @@ The local Kubernetes cluster created with Kind by the `Makefile` creates a Kuber
 
 For connecting to this cluster with kubectl or Velero CLI you need to export the `KUBECONFIG` environment variable pointing to such file (e.g. `export KUBECONFIG=$(pwd)/.k8s/config`).
 
-## steps to publish a new velero plugin for storj
+### How to publish a new version
 
-```
-$ docker build -t storjlabs/velero-plugin:<version> .
-
-$ docker push storjlabs/velero-plugin:<version>
-```
+Follow the [MAINTAINERS](MAINTAINERS.md) guide.
