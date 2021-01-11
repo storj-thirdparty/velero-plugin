@@ -16,6 +16,12 @@ pipeline {
 
                 sh 'mkdir -p .build'
 
+                // make a backup of the mod file in case, for later linting
+                sh 'cp go.mod .build/go.mod.orig'
+
+                // download dependencies
+                sh 'go mod download'
+
                 sh 'service postgresql start'
 
                 sh 'cockroach start-single-node --insecure --store=\'/tmp/crdb\' --listen-addr=localhost:26257 --http-addr=localhost:8080 --cache 512MiB --max-sql-memory 512MiB --background'
@@ -32,6 +38,7 @@ pipeline {
                         sh 'check-peer-constraints'
                         sh 'storj-protobuf --protoc=$HOME/protoc/bin/protoc lint'
                         sh 'storj-protobuf --protoc=$HOME/protoc/bin/protoc check-lock'
+                        sh 'check-mod-tidy -mod .build/go.mod.orig'
                         sh 'check-atomic-align ./...'
                         sh 'check-errs ./...'
                         sh 'staticcheck ./...'
