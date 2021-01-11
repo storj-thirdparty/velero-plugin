@@ -20,7 +20,7 @@ import (
 	"storj.io/common/testcontext"
 	"storj.io/common/testrand"
 	"storj.io/linksharing/httpserver"
-	"storj.io/linksharing/linksharing"
+	"storj.io/linksharing/sharing"
 	"storj.io/storj/private/testplanet"
 	"storj.io/velero-plugin/tardigrade"
 )
@@ -366,15 +366,14 @@ func TestCreateSignedURL(t *testing.T) {
 }
 
 func newLinksharingServer() (*httpserver.Server, error) {
-	handler, err := linksharing.NewHandler(zap.NewNop(), linksharing.HandlerConfig{URLBase: "http://localhost:0"})
+	handler, err := sharing.NewHandler(zap.NewNop(), nil, sharing.Config{URLBase: "http://localhost:0"})
 	if err != nil {
 		return nil, err
 	}
 
-	server, err := httpserver.New(zap.NewNop(), httpserver.Config{
+	server, err := httpserver.New(zap.NewNop(), handler, httpserver.Config{
 		Name:            "Link Sharing",
 		Address:         "localhost:0",
-		Handler:         handler,
 		ShutdownTimeout: -1,
 	})
 	if err != nil {
