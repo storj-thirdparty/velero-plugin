@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             label 'main'
-            image docker.build("storj-ci", "--pull https://github.com/storj/ci.git").id
+            image docker.build("storj-ci", "--pull git://github.com/storj/ci.git#main").id
             args '-u root:root --cap-add SYS_PTRACE -v "/tmp/gomod":/go/pkg/mod'
         }
     }
@@ -15,6 +15,12 @@ pipeline {
                 checkout scm
 
                 sh 'mkdir -p .build'
+
+                // make a backup of the mod file in case, for later linting
+                sh 'cp go.mod .build/go.mod.orig'
+
+                // download dependencies
+                sh 'go mod download'
 
                 sh 'service postgresql start'
 
@@ -32,6 +38,7 @@ pipeline {
                         sh 'check-peer-constraints'
                         sh 'storj-protobuf --protoc=$HOME/protoc/bin/protoc lint'
                         sh 'storj-protobuf --protoc=$HOME/protoc/bin/protoc check-lock'
+                        sh 'check-mod-tidy -mod .build/go.mod.orig'
                         sh 'check-atomic-align ./...'
                         sh 'check-errs ./...'
                         sh 'staticcheck ./...'
