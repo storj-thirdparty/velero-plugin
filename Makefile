@@ -113,3 +113,11 @@ clean: dev-env-destroy ## clean up the local environment on your local machine
 .PHONY: .is-access-set
 .is-access-set:
 	@$(if $(STORJ_ACCESS),,$(error STORJ_ACCESS environment variable is required))
+
+.PHONY: bump-dependencies
+bump-dependencies:
+	go get storj.io/uplink@latest
+	go mod tidy
+	cd testsuite; \
+		go get storj.io/common@latest storj.io/linksharing@latest storj.io/storj@latest; \
+		go mod tidy
