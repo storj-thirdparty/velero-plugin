@@ -1,5 +1,10 @@
 # Velero plugin for Tardigrade
 
+__NOTE__ this project isn't in our current focus, priorities nor short-term roadmap.
+We are looking for outside contributions for possible bug fixes and updates and possible missing features.
+
+## Description
+
 Velero is a tool to backup Kubernetes clusters. Velero does two things:
 
 1. Performs backups of the workloads running in a kubernetes cluster and,
