@@ -1,4 +1,4 @@
-# Velero plugin for Tardigrade
+# Velero plugin for Storj DCS
 
 __NOTE__ this project isn't in our current focus, priorities, nor short-term roadmap.
 We are looking for outside contributions for possible bug fixes and updates and possible missing features.
@@ -12,20 +12,19 @@ Velero is a tool to backup Kubernetes clusters. Velero does two things:
 
 Velero is able to integrate with a variety of storage systems plugins. There are two types of plugins available: object store or volume snapshotter (or both).
 
-Here we implement a Velero Object Store plugin that is backed by Tardigrade object storage.
+Here we implement a Velero Object Store plugin that is backed by Storj DCS object storage.
 
 ## Installation
 
 ### Prerequisites
 
 - Complete Velero prerequisites and install the CLI: [docs](https://velero.io/docs/master/basic-install/)
-- Create a Tardigrade account: [docs](https://tardigrade.io/signup/)
-- Create a project in the Tardigrade account: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-project)
-- Create an API key for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-an-api-key)
-- Setup the Uplink CLI and create an access grant for the project: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/set-up-uplink-cli)
-- Create a Tardigrade bucket where Velero will store the backups: [docs](https://documentation.tardigrade.io/getting-started/uploading-your-first-object/create-a-bucket)
+- Create a Storj DCS account: [docs](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/prerequisites)
+- Create an Access Grant: [docs](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/create-first-access-grant)
+- Set up Uplink CLI with the previously created Access Grant: [doc](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/set-up-uplink-cli)
+- Create a bucket where Velero will store the backups: [docs](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/create-a-bucket)
 
-### Install the Velero plugin for Tardigrade
+### Install the Velero plugin for Tardigrade (a.k.a. Storj DCS)
 
 ```
 $ velero install --provider tardigrade \
