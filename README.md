@@ -1,6 +1,6 @@
 # Velero plugin for Tardigrade
 
-__NOTE__ this project isn't in our current focus, priorities nor short-term roadmap.
+__NOTE__ this project isn't in our current focus, priorities, nor short-term roadmap.
 We are looking for outside contributions for possible bug fixes and updates and possible missing features.
 
 ## Description
