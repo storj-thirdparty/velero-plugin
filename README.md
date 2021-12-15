@@ -18,7 +18,7 @@ Here we implement a Velero Object Store plugin that is backed by Storj DCS objec
 
 ### Prerequisites
 
-- Complete Velero prerequisites and install the CLI: [docs](https://velero.io/docs/master/basic-install/)
+- Complete Velero prerequisites and install the CLI: [docs](https://velero.io/docs/main/basic-install/)
 - Create a Storj DCS account: [docs](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/prerequisites)
 - Create an Access Grant: [docs](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/create-first-access-grant)
 - Set up Uplink CLI with the previously created Access Grant: [doc](https://docs.storj.io/dcs/getting-started/quickstart-uplink-cli/uploading-your-first-object/set-up-uplink-cli)
