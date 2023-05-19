@@ -1,7 +1,22 @@
 # Velero plugin for Storj DCS
 
-__NOTE__ this project isn't in our current focus, priorities, nor short-term roadmap.
-We are looking for outside contributions for possible bug fixes and updates and possible missing features.
+__IMPORTANT NOTICE__ we have archived this project because with our multi-tenant hosted S3 gateways
+you can use [Velero AWS plugin](https://github.com/vmware-tanzu/velero-plugin-for-aws) to store the
+data in Storj decentralized storage network.
+
+Example configuration of Velero AWS plugin with Storj DCS.
+
+```
+velero install \
+    --provider aws \
+    --plugins velero/velero-plugin-for-aws:v1.6.0 \
+    --bucket <YOUR_STORJ_BUCKET_NAME> \
+    --backup-location-config region=global,s3Url=gateway.storjshare.io \
+    --secret-file ./credentials-storj \
+    --use-volume-snapshots=false \
+    --use-restic
+```
+
 
 ## Description
 
